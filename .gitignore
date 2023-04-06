@@ -364,3 +364,6 @@ FodyWeavers.xsd
 
 # Vscode cache folder
 /.vscode/
+
+# Gitignore file itself
+.gitignore
