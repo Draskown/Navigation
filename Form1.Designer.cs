@@ -49,7 +49,7 @@
             this.label10 = new System.Windows.Forms.Label();
             this.d2Label = new System.Windows.Forms.Label();
             this.label12 = new System.Windows.Forms.Label();
-            this.d3label = new System.Windows.Forms.Label();
+            this.d3Label = new System.Windows.Forms.Label();
             this.label14 = new System.Windows.Forms.Label();
             this.d4Label = new System.Windows.Forms.Label();
             this.label16 = new System.Windows.Forms.Label();
@@ -311,12 +311,12 @@
             // 
             // d3label
             // 
-            this.d3label.AutoSize = true;
-            this.d3label.Location = new System.Drawing.Point(38, 78);
-            this.d3label.Name = "d3label";
-            this.d3label.Size = new System.Drawing.Size(16, 16);
-            this.d3label.TabIndex = 2;
-            this.d3label.Text = "0";
+            this.d3Label.AutoSize = true;
+            this.d3Label.Location = new System.Drawing.Point(38, 78);
+            this.d3Label.Name = "d3Label";
+            this.d3Label.Size = new System.Drawing.Size(16, 16);
+            this.d3Label.TabIndex = 2;
+            this.d3Label.Text = "0";
             // 
             // label14
             // 
@@ -656,7 +656,7 @@
             this.groupBox2.Controls.Add(this.leLabel);
             this.groupBox2.Controls.Add(this.cLabel);
             this.groupBox2.Controls.Add(this.d2Label);
-            this.groupBox2.Controls.Add(this.d3label);
+            this.groupBox2.Controls.Add(this.d3Label);
             this.groupBox2.Controls.Add(this.l1Label);
             this.groupBox2.Controls.Add(this.label24);
             this.groupBox2.Controls.Add(this.label17);
@@ -767,7 +767,7 @@
         private System.Windows.Forms.Label label10;
         private System.Windows.Forms.Label d2Label;
         private System.Windows.Forms.Label label12;
-        private System.Windows.Forms.Label d3label;
+        private System.Windows.Forms.Label d3Label;
         private System.Windows.Forms.Label label14;
         private System.Windows.Forms.Label d4Label;
         private System.Windows.Forms.Label label16;
