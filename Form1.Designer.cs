@@ -106,7 +106,7 @@
             this.startBtn.TabIndex = 0;
             this.startBtn.Text = "Start UDP Connection";
             this.startBtn.UseVisualStyleBackColor = true;
-            this.startBtn.Click += new System.EventHandler(this.startBtn_Click);
+            this.startBtn.Click += new System.EventHandler(this.StartBtn_Click);
             // 
             // numN
             // 
@@ -118,7 +118,7 @@
             this.numN.Size = new System.Drawing.Size(67, 19);
             this.numN.TabIndex = 1;
             this.numN.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.numN.ValueChanged += new System.EventHandler(this.num_ValueChanged);
+            this.numN.ValueChanged += new System.EventHandler(this.Num_ValueChanged);
             // 
             // label1
             // 
@@ -140,7 +140,7 @@
             this.numM.Size = new System.Drawing.Size(67, 19);
             this.numM.TabIndex = 1;
             this.numM.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.numM.ValueChanged += new System.EventHandler(this.num_ValueChanged);
+            this.numM.ValueChanged += new System.EventHandler(this.Num_ValueChanged);
             // 
             // label2
             // 
@@ -161,7 +161,7 @@
             this.numF.Size = new System.Drawing.Size(67, 19);
             this.numF.TabIndex = 1;
             this.numF.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.numF.ValueChanged += new System.EventHandler(this.num_ValueChanged);
+            this.numF.ValueChanged += new System.EventHandler(this.Num_ValueChanged);
             // 
             // label3
             // 
@@ -182,7 +182,7 @@
             this.numB.Size = new System.Drawing.Size(67, 19);
             this.numB.TabIndex = 1;
             this.numB.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.numB.ValueChanged += new System.EventHandler(this.num_ValueChanged);
+            this.numB.ValueChanged += new System.EventHandler(this.Num_ValueChanged);
             // 
             // label4
             // 
@@ -203,7 +203,7 @@
             this.numT.Size = new System.Drawing.Size(67, 19);
             this.numT.TabIndex = 1;
             this.numT.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.numT.ValueChanged += new System.EventHandler(this.num_ValueChanged);
+            this.numT.ValueChanged += new System.EventHandler(this.Num_ValueChanged);
             // 
             // label5
             // 
@@ -223,6 +223,7 @@
             this.resetBtn.TabIndex = 0;
             this.resetBtn.Text = "Reset";
             this.resetBtn.UseVisualStyleBackColor = true;
+            this.resetBtn.Click += new System.EventHandler(this.ResetNums);
             // 
             // groupBox1
             // 
@@ -712,7 +713,7 @@
             this.sendBtn.TabIndex = 0;
             this.sendBtn.Text = "Send";
             this.sendBtn.UseVisualStyleBackColor = true;
-            this.sendBtn.Click += new System.EventHandler(this.sendBtn_Click);
+            this.sendBtn.Click += new System.EventHandler(this.SendBtn_Click);
             // 
             // Form1
             // 

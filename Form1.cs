@@ -11,8 +11,9 @@ public partial class Form1 : Form
     private UdpClient udpClient;
     private Thread thread;
     private int localPort = 7777;
+    private int remotePort = 8888;
+    private string localIP = "127.0.0.1";
     private IPEndPoint remoteIP = new IPEndPoint(IPAddress.Any, 0);
-    private byte[] content;
     private string message;
 
     // Structurs for robot's data and message to it
@@ -64,8 +65,16 @@ public partial class Form1 : Form
         
     }
 
-    //
-    private void startBtn_Click(object sender, EventArgs e){
+    // Reset the numeric fields
+    private void ResetNums(object sender, EventArgs e){
+        this.numM.Value = 0;
+        this.numF.Value = 0;
+        this.numB.Value = 0;
+        this.numT.Value = 0;
+    }
+
+    // Start or close UDP connection
+    private void StartBtn_Click(object sender, EventArgs e){
         if (udpClient == null) {
             if (thread != null) {
                 thread.Abort();
@@ -76,7 +85,7 @@ public partial class Form1 : Form
                 thread = new Thread(new ThreadStart(ReceiveData));
                 thread.IsBackground = true;
                 thread.Start();
-                PrintLog("UDPClient started");
+                PrintLog("UDPClient has been started");
             }
             catch {
                 PrintLog("UDPClient's start failed");
@@ -84,31 +93,48 @@ public partial class Form1 : Form
             
             this.startBtn.Text = "Stop UDP Connection";
 
-        } else{
-            
+        } else {
+            if (thread != null){
+                thread.Abort();
+                udpClient.Close();
+                thread = null;
+                udpClient = null;
+            }
+            PrintLog("UDPClient has been stopped");
+
             this.startBtn.Text = "Start UDP Connection";
         }
     }
 
-    //
-    private void sendBtn_Click(object sender, EventArgs e){
+    // Send messages to the Sim
+    private void SendBtn_Click(object sender, EventArgs e){
+        if (udpClient != null) {
+            SendData();
 
+            rMsg.N++;
+            GetMsg();
+        }
     }
 
     // Handle the changing of numeric values
-    private void num_ValueChanged(object sender, EventArgs e){
+    private void Num_ValueChanged(object sender, EventArgs e){
         var num = (NumericUpDown)sender;
 
         switch (num.Name){
             case "numN":
+                rMsg.N = (int)num.Value;
                 break;
             case "numM":
+                rMsg.M = (int)num.Value;
                 break;
             case "numF":
+                rMsg.F = (int)num.Value;
                 break;
             case "numB":
+                rMsg.B = (int)num.Value;
                 break;
             case "numT":
+                rMsg.T = (int)num.Value;
                 break;
         }
     }
@@ -120,7 +146,7 @@ public partial class Form1 : Form
     private void ReceiveData(){
         while (true){
             try {
-                content = udpClient.Receive(ref remoteIP);
+                byte[] content = udpClient.Receive(ref remoteIP);
 
                 if (content.Length > 0){
                     message = Encoding.ASCII.GetString(content);
@@ -138,6 +164,24 @@ public partial class Form1 : Form
             } catch (Exception e){
                 this.Invoke(() => PrintLog($"Error receiving data + {e}"));
             }
+        }
+    }
+
+    // Send data to the Sim
+    private void SendData(){
+        IPAddress ip = IPAddress.Parse(localIP.Trim());
+        IPEndPoint ipEndPoint = new IPEndPoint(ip, remotePort);
+
+        string text = JsonSerializer.Serialize<RobotMsg>(rMsg) + "\n";
+        
+        byte[] content = Encoding.ASCII.GetBytes(text);
+        
+        try{
+            if (udpClient.Send(content, content.Length, ipEndPoint) > 0)
+                PrintLog("Sent message:" + text);
+            
+        } catch (Exception e){
+            PrintLog($"Error has occured: {e}");
         }
     }
 
@@ -174,6 +218,15 @@ public partial class Form1 : Form
         this.l2Label.Text = rData.l2;
         this.l3Label.Text = rData.l3;
         this.l4Label.Text = rData.l4;
+    }
+
+    // Fill the numerics according to the sent msg
+    private void GetMsg(){
+        this.numN.Value = rMsg.N;
+        this.numM.Value = rMsg.M;
+        this.numF.Value = rMsg.F;
+        this.numB.Value = rMsg.B;
+        this.numT.Value = rMsg.T;
     }
     #endregion
 }
