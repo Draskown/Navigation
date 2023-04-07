@@ -53,8 +53,6 @@ public partial class Form2 : Form
 
     private RobotData rData;
     private RobotMsg rMsg;
-
-    private int autoN;
     private bool moveActive;
     private int mode;
 
@@ -80,7 +78,6 @@ public partial class Form2 : Form
 
         this.numN.Value = 1;
 
-        autoN = 0;
         moveActive = false;
 
         mode = 0;
@@ -90,7 +87,6 @@ public partial class Form2 : Form
     // Move robot according to the task
     private void MoveRobot(object sender, EventArgs e){
         if (!moveActive) {
-            autoN = 0;
             this.timer.Start();
             this.moveBtn.Text = "Stop";
             moveActive = true;
@@ -163,62 +159,40 @@ public partial class Form2 : Form
 
     // Handle timer ticking
     private void timer_Tick(object sender, EventArgs e){
-        switch (mode) {
-            case 0:
-                rMsg.B = -50;
-                rMsg.N++;
-                SendData();
-                mode = 1;
-                break;
-            case 1:
-                if (Convert.ToInt16(rData.d2) < 25) {
-                    rMsg.B = 0;
+        if (Convert.ToInt16(rData.d0) > 30 && rData.b=="0") {
+                if (Convert.ToInt16(rData.d6) < 20) {
+                    rMsg.B = -20;
+
+                    if (Convert.ToInt16(rData.d7) < 40)
+                        rMsg.F = 0;
+                    else
+                        rMsg.F = 100;
+                    
                     rMsg.N++;
                     SendData();
-                    mode = 2;
                 }
-                break;
-            case 2:
-                if (Convert.ToInt16(rData.d0) > 30 && rData.b=="0") {
-                    if (Convert.ToInt16(rData.d2) < 20) {
-                        rMsg.B = 20;
-
-                        if (Convert.ToInt16(rData.d1) < 40)
-                            rMsg.F = 0;
-                        else
-                            rMsg.F = 100;
-                        
-                        rMsg.N++;
-                        SendData();
-                    }
-                    else if (Convert.ToInt16(rData.d2) > 30) {
-                        rMsg.B = -20;
-                        if (Convert.ToInt16(rData.d1) > 60)
-                        {
-                            rMsg.F = 0;
-                        }
-                        else
-                        {
-                            rMsg.F = 100;
-                        }
-                        rMsg.N++;
-                        SendData();
-                    }
-                    else {
-                        rMsg.B = 0;
+                else if (Convert.ToInt16(rData.d6) > 30) {
+                    rMsg.B = 20;
+                    if (Convert.ToInt16(rData.d7) > 60)
+                        rMsg.F = 0;
+                    else
                         rMsg.F = 100;
-                        rMsg.N++;
-                        SendData();
-                    }
+                    rMsg.N++;
+                    SendData();
                 }
                 else {
-                    rMsg.B = 30;
-                    rMsg.F = 0;
+                    rMsg.B = -0;
+                    rMsg.F = 100;
                     rMsg.N++;
                     SendData();
                 }
-                break;
-        }
+            }
+            else {
+                rMsg.B = -30;
+                rMsg.F = 0;
+                rMsg.N++;
+                SendData();
+            }
     }
     #endregion
 
@@ -261,7 +235,8 @@ public partial class Form2 : Form
         try{
             if (udpClient.Send(content, content.Length, ipEndPoint) > 0)
                 PrintLog("Sent message:" + text);
-            
+
+            GetMsg();            
         } catch (Exception ex){
             PrintLog($"Error has occured: {ex}");
         }

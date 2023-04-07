@@ -696,7 +696,7 @@ namespace Navigation
             this.moveBtn.Name = "moveBtn";
             this.moveBtn.Size = new System.Drawing.Size(89, 33);
             this.moveBtn.TabIndex = 0;
-            this.moveBtn.Text = "Slalom";
+            this.moveBtn.Text = "Move";
             this.moveBtn.UseVisualStyleBackColor = true;
             this.moveBtn.Click += new System.EventHandler(this.MoveRobot);
             // 
