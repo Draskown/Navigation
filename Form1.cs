@@ -17,8 +17,9 @@ public partial class Form1 : Form
     private int remotePort;
     private string message;
 
-    // Structurs for robot's data and message to it
+    // Structures for robot's data and message to it
     private struct RobotData{
+        public string n {get; set;}
         public string d0 { get; set; }
         public string d1 { get; set; }
         public string d2 { get; set; }
@@ -53,6 +54,9 @@ public partial class Form1 : Form
     private RobotData rData;
     private RobotMsg rMsg;
 
+    private int autoN;
+    private bool moveActive;
+
     // Handle the Form
     public Form1()
     {
@@ -72,12 +76,27 @@ public partial class Form1 : Form
         udpClient = new UdpClient(localPort);
         thread = new Thread(new ThreadStart(ReceiveData));
         connOpened = false;
+
+        this.numN.Value = 1;
+
+        autoN = 0;
+        moveActive = false;
     }
 
     #region Events
     // Move robot according to the task
     private void MoveRobot(object sender, EventArgs e){
-
+        if (!moveActive) {
+            autoN = 0;
+            this.timer.Start();
+            this.moveBtn.Text = "Stop";
+            moveActive = true;
+        }
+        else {
+            this.timer.Stop();
+            this.moveBtn.Text = "Slalom";
+            moveActive = false;
+        }
     }
 
     // Reset the numeric fields
@@ -101,19 +120,8 @@ public partial class Form1 : Form
                 PrintLog($"UDPClient's start failed: {ex}");
             }
             
-            this.startBtn.Text = "Stop UDP Connection";
-        } else {
-            udpClient.Close();
-            connOpened = false;
-
-            PrintLog("UDPClient has been stopped");
-
-            this.startBtn.Text = "Start UDP Connection";
             this.startBtn.Enabled = false;
             this.startBtn.BackColor = Color.Gray;
-
-            this.moveBtn.Enabled = false;
-            this.moveBtn.BackColor = Color.Gray;
         }
     }
 
@@ -148,6 +156,37 @@ public partial class Form1 : Form
                 rMsg.T = (int)num.Value;
                 break;
         }
+    }
+
+    // Handle timer ticking
+    private void timer_Tick(object sender, EventArgs e){
+        
+        rMsg.F = 100;
+        rMsg.N++;
+
+        if (autoN < 14)
+            rMsg.B = -7;
+
+        if (autoN == 14)
+            rMsg.B = 30;
+
+        if (autoN == 20)
+            rMsg.B = 0;
+
+        if (autoN == 32)
+            rMsg.B = -30;
+        
+        if (autoN == 37)
+            rMsg.B = 0;
+
+        if (autoN == 45){
+            rMsg.F = 0;
+            this.timer.Stop();
+        }
+
+        SendData();
+        GetMsg();
+        autoN++;
     }
     #endregion
 
@@ -229,6 +268,7 @@ public partial class Form1 : Form
         this.l2Label.Text = rData.l2;
         this.l3Label.Text = rData.l3;
         this.l4Label.Text = rData.l4;
+        this.numN.Value = Int32.Parse(rData.n);
     }
 
     // Fill the numerics according to the sent msg

@@ -88,6 +88,7 @@
             this.moveBtn = new System.Windows.Forms.Button();
             this.listBox = new System.Windows.Forms.ListBox();
             this.sendBtn = new System.Windows.Forms.Button();
+            this.timer = new System.Windows.Forms.Timer();
             ((System.ComponentModel.ISupportInitialize)(this.numN)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numM)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numF)).BeginInit();
@@ -119,6 +120,8 @@
             this.numN.TabIndex = 1;
             this.numN.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.numN.ValueChanged += new System.EventHandler(this.Num_ValueChanged);
+            this.numN.Minimum = -100;
+            this.numN.Maximum = 1000;
             // 
             // label1
             // 
@@ -141,6 +144,7 @@
             this.numM.TabIndex = 1;
             this.numM.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.numM.ValueChanged += new System.EventHandler(this.Num_ValueChanged);
+            this.numM.Minimum = -100;
             // 
             // label2
             // 
@@ -162,6 +166,7 @@
             this.numF.TabIndex = 1;
             this.numF.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.numF.ValueChanged += new System.EventHandler(this.Num_ValueChanged);
+            this.numF.Minimum = -100;
             // 
             // label3
             // 
@@ -183,6 +188,7 @@
             this.numB.TabIndex = 1;
             this.numB.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.numB.ValueChanged += new System.EventHandler(this.Num_ValueChanged);
+            this.numB.Minimum = -100;
             // 
             // label4
             // 
@@ -204,6 +210,7 @@
             this.numT.TabIndex = 1;
             this.numT.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.numT.ValueChanged += new System.EventHandler(this.Num_ValueChanged);
+            this.numT.Minimum = -100;
             // 
             // label5
             // 
@@ -716,6 +723,11 @@
             this.sendBtn.Text = "Send";
             this.sendBtn.UseVisualStyleBackColor = true;
             this.sendBtn.Click += new System.EventHandler(this.SendBtn_Click);
+            //
+            // timer
+            //
+            this.timer.Interval = 2000;
+            this.timer.Tick += new System.EventHandler(this.timer_Tick);
             // 
             // Form1
             // 
@@ -808,5 +820,6 @@
         private System.Windows.Forms.Button moveBtn;
         private System.Windows.Forms.ListBox listBox;
         private System.Windows.Forms.Button sendBtn;
+        private System.Windows.Forms.Timer timer;
     }
 }
