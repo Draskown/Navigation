@@ -704,6 +704,7 @@
             this.listBox.Name = "listBox";
             this.listBox.Size = new System.Drawing.Size(586, 152);
             this.listBox.TabIndex = 5;
+            this.listBox.HorizontalScrollbar = true;
             // 
             // sendBtn
             // 
@@ -733,7 +734,6 @@
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.Name = "Form1";
             this.Text = "IoT_LR1";
-            this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.numN)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numM)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numF)).EndInit();

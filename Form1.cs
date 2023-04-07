@@ -10,10 +10,11 @@ public partial class Form1 : Form
     // Create global fields
     private UdpClient udpClient;
     private Thread thread;
-    private int localPort = 7777;
-    private int remotePort = 8888;
-    private string localIP = "127.0.0.1";
-    private IPEndPoint remoteIP = new IPEndPoint(IPAddress.Any, 0);
+    private bool connOpened;
+    private string localIP;
+    private int localPort;
+    private IPEndPoint remoteIP;
+    private int remotePort;
     private string message;
 
     // Structurs for robot's data and message to it
@@ -49,22 +50,31 @@ public partial class Form1 : Form
         public int T { get; set; }
     }
 
-    private RobotData rData = new RobotData();
-    private RobotMsg rMsg = new RobotMsg();
+    private RobotData rData;
+    private RobotMsg rMsg;
 
     // Handle the Form
     public Form1()
     {
         // Init all the components on the form
         InitializeComponent();
+
+        rData = new RobotData();
+        rMsg = new RobotMsg();
+
+        localIP = "127.0.0.1";
+        localPort = 7777;
+        remoteIP = new IPEndPoint(IPAddress.Any, 0);
+        remotePort = 8888;
+
+        message = "";
+
+        udpClient = new UdpClient(localPort);
+        thread = new Thread(new ThreadStart(ReceiveData));
+        connOpened = false;
     }
 
     #region Events
-    // 
-    private void Form1_Load(object sender, EventArgs e){
-        
-    }
-
     // Move robot according to the task
     private void MoveRobot(object sender, EventArgs e){
 
@@ -80,40 +90,36 @@ public partial class Form1 : Form
 
     // Start or close UDP connection
     private void StartBtn_Click(object sender, EventArgs e){
-        if (udpClient == null) {
-            if (thread != null) {
-                thread.Abort();
-            }
-
+        if (!connOpened) {
             try {
-                udpClient = new UdpClient(localPort);
-                thread = new Thread(new ThreadStart(ReceiveData));
+                connOpened = true;
                 thread.IsBackground = true;
                 thread.Start();
                 PrintLog("UDPClient has been started");
             }
-            catch {
-                PrintLog("UDPClient's start failed");
+            catch (Exception ex){
+                PrintLog($"UDPClient's start failed: {ex}");
             }
             
             this.startBtn.Text = "Stop UDP Connection";
-
         } else {
-            if (thread != null){
-                thread.Abort();
-                udpClient.Close();
-                thread = null;
-                udpClient = null;
-            }
+            udpClient.Close();
+            connOpened = false;
+
             PrintLog("UDPClient has been stopped");
 
             this.startBtn.Text = "Start UDP Connection";
+            this.startBtn.Enabled = false;
+            this.startBtn.BackColor = Color.Gray;
+
+            this.moveBtn.Enabled = false;
+            this.moveBtn.BackColor = Color.Gray;
         }
     }
 
     // Send messages to the Sim
     private void SendBtn_Click(object sender, EventArgs e){
-        if (udpClient != null) {
+        if (connOpened) {
             SendData();
 
             rMsg.N++;
@@ -149,7 +155,7 @@ public partial class Form1 : Form
     #region Methods
     // Handling of the separate task
     private void ReceiveData(){
-        while (true){
+        while (connOpened){
             try {
                 byte[] content = udpClient.Receive(ref remoteIP);
 
@@ -166,8 +172,8 @@ public partial class Form1 : Form
                         }
                     });
                 }
-            } catch (Exception e){
-                this.Invoke(() => PrintLog($"Error receiving data + {e}"));
+            } catch (Exception ex){
+                this.Invoke(() => PrintLog($"Error receiving data: {ex}"));
             }
         }
     }
@@ -185,8 +191,8 @@ public partial class Form1 : Form
             if (udpClient.Send(content, content.Length, ipEndPoint) > 0)
                 PrintLog("Sent message:" + text);
             
-        } catch (Exception e){
-            PrintLog($"Error has occured: {e}");
+        } catch (Exception ex){
+            PrintLog($"Error has occured: {ex}");
         }
     }
 
