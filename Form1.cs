@@ -65,6 +65,11 @@ public partial class Form1 : Form
         
     }
 
+    // Move robot according to the task
+    private void MoveRobot(object sender, EventArgs e){
+
+    }
+
     // Reset the numeric fields
     private void ResetNums(object sender, EventArgs e){
         this.numM.Value = 0;

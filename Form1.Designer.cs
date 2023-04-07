@@ -691,6 +691,7 @@
             this.moveBtn.TabIndex = 0;
             this.moveBtn.Text = "Slalom";
             this.moveBtn.UseVisualStyleBackColor = true;
+            this.moveBtn.Click += new System.EventHandler(this.MoveRobot);
             // 
             // listBox
             // 
