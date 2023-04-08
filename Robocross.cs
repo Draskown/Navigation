@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace Navigation;
 
-public partial class Form2 : Form
+public partial class Robocross : Form
 {
     // Create global fields
     private UdpClient udpClient;
@@ -54,9 +54,13 @@ public partial class Form2 : Form
     private RobotData rData;
     private RobotMsg rMsg;
     private bool moveActive;
+    private int mode;
+    private int d0, d2, d6;
+    private double t;
+    private double error;
 
     // Handle the Form
-    public Form2()
+    public Robocross()
     {
         // Init all the components on the form
         InitializeComponent();
@@ -75,9 +79,12 @@ public partial class Form2 : Form
         thread = new Thread(new ThreadStart(ReceiveData));
         connOpened = false;
 
-        this.numN.Value = 1;
+        this.numN.Value = 0;
 
         moveActive = false;
+
+        mode = d0 = d2 = d6 = 0;
+        t = error = 0.0;
     }
 
     #region Events
@@ -156,40 +163,136 @@ public partial class Form2 : Form
 
     // Handle timer ticking
     private void timer_Tick(object sender, EventArgs e){
-        if (Convert.ToInt16(rData.d0) > 30 && rData.b=="0") {
-                if (Convert.ToInt16(rData.d6) < 20) {
-                    rMsg.B = -20;
+        // t forward = 0.0
+        // t to right = 90.0
+        // t to bacwards = 180.0
+        // t to left = 270
 
-                    if (Convert.ToInt16(rData.d7) < 40)
-                        rMsg.F = 0;
-                    else
-                        rMsg.F = 100;
-                    
-                    rMsg.N++;
-                    SendData();
-                }
-                else if (Convert.ToInt16(rData.d6) > 30) {
-                    rMsg.B = 20;
-                    if (Convert.ToInt16(rData.d7) > 60)
-                        rMsg.F = 0;
-                    else
-                        rMsg.F = 100;
-                    rMsg.N++;
-                    SendData();
-                }
-                else {
-                    rMsg.B = 0;
+        d0 = Convert.ToInt16(rData.d0);
+        d2 = Convert.ToInt16(rData.d2);
+        d6 = Convert.ToInt16(rData.d6);
+        t = Convert.ToDouble(rData.t);
+
+        switch (mode){
+            case 0:
+                if (mode == 0){
                     rMsg.F = 100;
-                    rMsg.N++;
-                    SendData();
+                    
+                    if (rData.l0 == "0" || rData.l1 == "0" || rData.l2 == "0" || rData.l3 == "0" || rData.l4 == "0")
+                        mode = 1;
                 }
-            }
-            else {
-                rMsg.B = -30;
-                rMsg.F = 0;
-                rMsg.N++;
-                SendData();
-            }
+                break;
+            case 1:
+                if (d0 > 30){
+                    rMsg.F = 100;
+                } else {
+                    rMsg.F = 0;
+
+                    if (d6 > d2)
+                        mode = 2;
+                    else
+                        mode = 3;
+                }
+                break;
+            case 2:
+                if (Math.Abs(t - 0.0) > 0.3){
+                    error = t - 0.0;
+
+                    if (error > 340.0)
+                        error -= 360;
+
+                    rMsg.B = Convert.ToInt16(((error)));
+                }
+                else{
+                    rMsg.B = 0;
+                    mode = 4;
+                }
+                break;
+            case 3:
+                if (Math.Abs(t - 180.0) > 0.3){
+                    error = t - 180.0;
+
+                    if (error > 200.0)
+                        error -= 180;
+
+                    rMsg.B = Convert.ToInt16(((error)));
+                }
+                else{
+                    rMsg.B = 0;
+                    mode = 6;
+                }
+                break;
+            case 4:
+                if (d0 > 30){
+                    rMsg.F = 100;
+                    
+                    if (d2 > 30){
+                        rMsg.F = 0;
+                        mode = 5;
+                    }
+                }
+                break;
+            case 5:
+                if (Math.Abs(t - 90.0) > 0.3){
+                    error = t - 90.0;
+
+                    if (error > 110.0)
+                        error -= 90.0;
+
+                    rMsg.B = Convert.ToInt16(((error)));
+                } else {
+                    rMsg.B = 0;
+                    mode = 1;
+                }
+                break;
+            case 6:
+                if (d0 > 30){
+                    rMsg.F = 100;
+                    
+                    if (d6 > 30){
+                        rMsg.F = 0;
+                        mode = 5;
+                    }
+                }
+                break;
+        }
+        
+        SendData();
+
+        // if (Convert.ToInt16(rData.d0) > 30 && rData.b=="0") {
+        //         if (Convert.ToInt16(rData.d6) < 20) {
+        //             rMsg.B = -20;
+
+        //             if (Convert.ToInt16(rData.d7) < 40)
+        //                 rMsg.F = 0;
+        //             else
+        //                 rMsg.F = 100;
+                    
+        //             rMsg.N++;
+        //             SendData();
+        //         }
+        //         else if (Convert.ToInt16(rData.d6) > 30) {
+        //             rMsg.B = 20;
+        //             if (Convert.ToInt16(rData.d7) > 60)
+        //                 rMsg.F = 0;
+        //             else
+        //                 rMsg.F = 100;
+        //             rMsg.N++;
+        //             SendData();
+        //         }
+        //         else {
+        //             rMsg.B = 0;
+        //             rMsg.F = 100;
+        //             rMsg.N++;
+        //             SendData();
+        //         }
+        //     }
+        //     else {
+        //         rMsg.B = -30;
+        //         rMsg.F = 0;
+        //         rMsg.N++;
+        //         SendData();
+        //     }
     }
     #endregion
 
@@ -222,6 +325,8 @@ public partial class Form2 : Form
 
     // Send data to the Sim
     private void SendData(){
+        rMsg.N++;
+
         IPAddress ip = IPAddress.Parse(localIP.Trim());
         IPEndPoint ipEndPoint = new IPEndPoint(ip, remotePort);
 
@@ -232,7 +337,6 @@ public partial class Form2 : Form
         try{
             if (udpClient.Send(content, content.Length, ipEndPoint) > 0)
                 PrintLog("Sent message:" + text);
-
             GetMsg();            
         } catch (Exception ex){
             PrintLog($"Error has occured: {ex}");
