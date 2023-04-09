@@ -54,10 +54,13 @@ public partial class Robocross : Form
     private RobotData rData;
     private RobotMsg rMsg;
     private bool moveActive;
-    private int mode, backwards;
-    private int d0, d2, d6, re, re_to;
+    private int mode, backwards, lineMult;
+    private int d0, d1, d2, d6, d7;
+    private int  re, re_to;
     private double t;
     private double error;
+    private double turnTolerance;
+    private double encodersMoveValue;
 
     // Handle the Form
     public Robocross()
@@ -84,8 +87,13 @@ public partial class Robocross : Form
         moveActive = false;
 
         mode = backwards = 0;
-        d0 = d2 = d6 = re = re_to = 0;
+        lineMult = 1;
+        d0 = d1 = d2 = d6 = d7 = 0;
+        re = re_to = 0;
         t = error = 0.0;
+
+        turnTolerance = 0.4;
+        encodersMoveValue = 130;
     }
 
     #region Events
@@ -170,8 +178,10 @@ public partial class Robocross : Form
         // t to left = 270
 
         d0 = Convert.ToInt16(rData.d0);
+        d1 = Convert.ToInt16(rData.d1);
         d2 = Convert.ToInt16(rData.d2);
         d6 = Convert.ToInt16(rData.d6);
+        d7 = Convert.ToInt16(rData.d7);
         t = Convert.ToDouble(rData.t);
         re = Convert.ToInt32(rData.re);
 
@@ -180,8 +190,11 @@ public partial class Robocross : Form
             case 0:
                 rMsg.F = 100;
                 
-                if (rData.l0 == "0" && rData.l1 == "0" && rData.l2 == "0" && rData.l3 == "0" && rData.l4 == "0")
-                    mode = 1;
+                if (rData.l0 == "0" && rData.l1 == "0" && rData.l2 == "0" && rData.l3 == "0" && rData.l4 == "0"){
+                    re_to = Convert.ToInt32(rData.re);
+                    lineMult = 2;
+                    mode = 5;
+                }
                 break;
             // Move forward till the wall
             case 1:
@@ -194,8 +207,26 @@ public partial class Robocross : Form
                         re_to = Convert.ToInt32(rData.re);
                         mode = 8;
                     }
+
+                    // Move robot off the wall if one's detected
+                    if (d1 < 40 || d2 < 15){
+                        rMsg.B = 20;
+                    } else if (d7 < 40 || d6 < 15){
+                        rMsg.B = -20;
+                    }
+                    
+                    // Correct the direction
+                    if (Math.Abs(t - 90.0 - 180.0*backwards) > turnTolerance){
+                        error = t - 90.0 - 180.0*backwards;
+
+                        if (error > 110.0 + 180.0*backwards)
+                            error -= 90.0 + 180.0*backwards;
+
+                        rMsg.B = Convert.ToInt16(((error)));
+                    }
+
+                // Once the wall has been spotted
                 } else {
-                    // Once the wall has been spotted
                     rMsg.F = 0;
 
                     // Decide where to go
@@ -207,8 +238,8 @@ public partial class Robocross : Form
                 break;
             // If d6 > d2 - turn left
             case 2:
-                if (Math.Abs(t - 0.0 + 180.0*backwards) > 0.3){
-                    error = t - 0.0 + 180.0*backwards;
+                if (Math.Abs(t - 0.0 - 180.0*backwards) > turnTolerance){
+                    error = t - 0.0 - 180.0*backwards;
 
                     if (error > 340.0 - 180*backwards)
                         error -= 360 - 180*backwards;
@@ -224,8 +255,8 @@ public partial class Robocross : Form
                 break;
             // if d6 < d2 - turn right
             case 3:
-                if (Math.Abs(t - 180.0 + 180.0*backwards) > 0.3){
-                    error = t - 180.0 + 180.0*backwards;
+                if (Math.Abs(t - 180.0 - 180.0*backwards) > turnTolerance){
+                    error = t - 180.0 - 180.0*backwards;
 
                     if (error > 200.0 - 180*backwards)
                         error -= 180 - 180*backwards;
@@ -233,11 +264,13 @@ public partial class Robocross : Form
                     rMsg.B = Convert.ToInt16(((error)));
                 }
                 // Once the desired direction is set - move forward
+                // Until d6 has sufficiant distance
                 else{
                     rMsg.B = 0;
                     mode = 7;
                 }
                 break;
+            // Move forward till d2 has distance
             case 4:
                 if (d0 > 30){
                     rMsg.B = 0;
@@ -249,29 +282,40 @@ public partial class Robocross : Form
                     }
                 }
                 break;
+            // Move more forward using encoders values
+            // To prevent collision
             case 5:
-                if (re < re_to + 100){
+                if (re < re_to + encodersMoveValue*lineMult){
                     rMsg.B = 0;
                     rMsg.F = 100;
                 }
+                // Once that's done - 
+                // Turn to the desired direction
+                // Moving forward (90.0) and moving backwards (270.0)
                 else{
+                    lineMult = 1;
                     rMsg.F = 0;
                     mode = 6;
                 }
                 break;
+            // Turn to move forward
             case 6:
-                if (Math.Abs(t - 90.0) > 0.3){
-                    error = t - 90.0;
+                if (Math.Abs(t - 90.0 - 180.0*backwards) > turnTolerance){
+                    error = t - 90.0 - 180.0*backwards;
 
-                    if (error > 110.0)
-                        error -= 90.0;
+                    if (error > 110.0 + 180.0*backwards)
+                        error -= 90.0 + 180.0*backwards;
 
                     rMsg.B = Convert.ToInt16(((error)));
-                } else {
+                } 
+                // Once the turning is done - 
+                // Move forward till the wall again
+                else {
                     rMsg.F = 0;
                     mode = 1;
                 }
                 break;
+            // Move forward till d6 has distance
             case 7:
                 if (d0 > 30){
                     rMsg.B = 0;
@@ -283,18 +327,27 @@ public partial class Robocross : Form
                     }
                 }
                 break;
+            // After the line's been detected - 
+            // Move a little forward beyond it
             case 8:
-                if (re < re_to + 100){
+                if (re < re_to + encodersMoveValue){
                     rMsg.B = 0;
                     rMsg.F = 100;
                 }
                 else{
                     rMsg.F = 0;
-                    mode = 9;
+                    
+                    // If the robot was moving backwards - 
+                    // Stop it
+                    if (backwards == 0)
+                        mode = 9;
+                    else
+                        mode = 10;
                 }
                 break;
+            // Turn around
             case 9:
-                if (Math.Abs(t - 270.0) > 0.3){
+                if (Math.Abs(t - 270.0) > turnTolerance){
                     error = t - 270.0;
 
                     if (error > 290.0)
@@ -306,6 +359,11 @@ public partial class Robocross : Form
                     rMsg.F = 0;
                     mode = 1;
                 }
+                break;
+            // Stop after complition
+            case 10:
+                rMsg.F = 0;
+                rMsg.B = 0;
                 break;
         }
         
