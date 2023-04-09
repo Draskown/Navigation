@@ -54,8 +54,8 @@ public partial class Robocross : Form
     private RobotData rData;
     private RobotMsg rMsg;
     private bool moveActive;
-    private int mode;
-    private int d0, d2, d6;
+    private int mode, backwards;
+    private int d0, d2, d6, re, re_to;
     private double t;
     private double error;
 
@@ -83,7 +83,8 @@ public partial class Robocross : Form
 
         moveActive = false;
 
-        mode = d0 = d2 = d6 = 0;
+        mode = backwards = 0;
+        d0 = d2 = d6 = re = re_to = 0;
         t = error = 0.0;
     }
 
@@ -172,67 +173,93 @@ public partial class Robocross : Form
         d2 = Convert.ToInt16(rData.d2);
         d6 = Convert.ToInt16(rData.d6);
         t = Convert.ToDouble(rData.t);
+        re = Convert.ToInt32(rData.re);
 
         switch (mode){
+            // Move forward till the line
             case 0:
-                if (mode == 0){
-                    rMsg.F = 100;
-                    
-                    if (rData.l0 == "0" || rData.l1 == "0" || rData.l2 == "0" || rData.l3 == "0" || rData.l4 == "0")
-                        mode = 1;
-                }
+                rMsg.F = 100;
+                
+                if (rData.l0 == "0" && rData.l1 == "0" && rData.l2 == "0" && rData.l3 == "0" && rData.l4 == "0")
+                    mode = 1;
                 break;
+            // Move forward till the wall
             case 1:
                 if (d0 > 30){
+                    rMsg.B = 0;
                     rMsg.F = 100;
+
+                    // If the line is seen again - turn around
+                    if (rData.l0 == "0" && rData.l1 == "0" && rData.l2 == "0" && rData.l3 == "0" && rData.l4 == "0"){
+                        re_to = Convert.ToInt32(rData.re);
+                        mode = 8;
+                    }
                 } else {
+                    // Once the wall has been spotted
                     rMsg.F = 0;
 
+                    // Decide where to go
                     if (d6 > d2)
                         mode = 2;
                     else
                         mode = 3;
                 }
                 break;
+            // If d6 > d2 - turn left
             case 2:
-                if (Math.Abs(t - 0.0) > 0.3){
-                    error = t - 0.0;
+                if (Math.Abs(t - 0.0 + 180.0*backwards) > 0.3){
+                    error = t - 0.0 + 180.0*backwards;
 
-                    if (error > 340.0)
-                        error -= 360;
+                    if (error > 340.0 - 180*backwards)
+                        error -= 360 - 180*backwards;
 
                     rMsg.B = Convert.ToInt16(((error)));
                 }
+                // Once the desired direction is set - move forward
+                // Until d2 has sufficiant distance
                 else{
                     rMsg.B = 0;
                     mode = 4;
                 }
                 break;
+            // if d6 < d2 - turn right
             case 3:
-                if (Math.Abs(t - 180.0) > 0.3){
-                    error = t - 180.0;
+                if (Math.Abs(t - 180.0 + 180.0*backwards) > 0.3){
+                    error = t - 180.0 + 180.0*backwards;
 
-                    if (error > 200.0)
-                        error -= 180;
+                    if (error > 200.0 - 180*backwards)
+                        error -= 180 - 180*backwards;
 
                     rMsg.B = Convert.ToInt16(((error)));
                 }
+                // Once the desired direction is set - move forward
                 else{
                     rMsg.B = 0;
-                    mode = 6;
+                    mode = 7;
                 }
                 break;
             case 4:
                 if (d0 > 30){
+                    rMsg.B = 0;
                     rMsg.F = 100;
                     
                     if (d2 > 30){
-                        rMsg.F = 0;
+                        re_to = Convert.ToInt32(rData.re);
                         mode = 5;
                     }
                 }
                 break;
             case 5:
+                if (re < re_to + 100){
+                    rMsg.B = 0;
+                    rMsg.F = 100;
+                }
+                else{
+                    rMsg.F = 0;
+                    mode = 6;
+                }
+                break;
+            case 6:
                 if (Math.Abs(t - 90.0) > 0.3){
                     error = t - 90.0;
 
@@ -241,58 +268,48 @@ public partial class Robocross : Form
 
                     rMsg.B = Convert.ToInt16(((error)));
                 } else {
-                    rMsg.B = 0;
+                    rMsg.F = 0;
                     mode = 1;
                 }
                 break;
-            case 6:
+            case 7:
                 if (d0 > 30){
+                    rMsg.B = 0;
                     rMsg.F = 100;
                     
                     if (d6 > 30){
-                        rMsg.F = 0;
+                        re_to = Convert.ToInt32(rData.re);
                         mode = 5;
                     }
+                }
+                break;
+            case 8:
+                if (re < re_to + 100){
+                    rMsg.B = 0;
+                    rMsg.F = 100;
+                }
+                else{
+                    rMsg.F = 0;
+                    mode = 9;
+                }
+                break;
+            case 9:
+                if (Math.Abs(t - 270.0) > 0.3){
+                    error = t - 270.0;
+
+                    if (error > 290.0)
+                        error -= 270.0;
+
+                    rMsg.B = Convert.ToInt16(((error)));
+                } else {
+                    backwards = 1;
+                    rMsg.F = 0;
+                    mode = 1;
                 }
                 break;
         }
         
         SendData();
-
-        // if (Convert.ToInt16(rData.d0) > 30 && rData.b=="0") {
-        //         if (Convert.ToInt16(rData.d6) < 20) {
-        //             rMsg.B = -20;
-
-        //             if (Convert.ToInt16(rData.d7) < 40)
-        //                 rMsg.F = 0;
-        //             else
-        //                 rMsg.F = 100;
-                    
-        //             rMsg.N++;
-        //             SendData();
-        //         }
-        //         else if (Convert.ToInt16(rData.d6) > 30) {
-        //             rMsg.B = 20;
-        //             if (Convert.ToInt16(rData.d7) > 60)
-        //                 rMsg.F = 0;
-        //             else
-        //                 rMsg.F = 100;
-        //             rMsg.N++;
-        //             SendData();
-        //         }
-        //         else {
-        //             rMsg.B = 0;
-        //             rMsg.F = 100;
-        //             rMsg.N++;
-        //             SendData();
-        //         }
-        //     }
-        //     else {
-        //         rMsg.B = -30;
-        //         rMsg.F = 0;
-        //         rMsg.N++;
-        //         SendData();
-        //     }
     }
     #endregion
 
