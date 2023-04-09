@@ -188,7 +188,8 @@ namespace Navigation
             this.numB.TabIndex = 1;
             this.numB.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.numB.ValueChanged += new System.EventHandler(this.Num_ValueChanged);
-            this.numB.Minimum = -100;
+            this.numB.Minimum = -360;
+            this.numB.Maximum = 360;
             // 
             // label4
             // 

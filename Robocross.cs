@@ -54,7 +54,7 @@ public partial class Robocross : Form
     private RobotData rData;
     private RobotMsg rMsg;
     private bool moveActive;
-    private int mode, backwards, lineMult;
+    private int mode, backwards, encMult;
     private int d0, d1, d2, d6, d7;
     private int  re, re_to;
     private double t;
@@ -86,14 +86,15 @@ public partial class Robocross : Form
 
         moveActive = false;
 
-        mode = backwards = 0;
-        lineMult = 1;
+        mode = 0;
+        backwards = 0;
         d0 = d1 = d2 = d6 = d7 = 0;
         re = re_to = 0;
         t = error = 0.0;
+        encMult = 1;
 
-        turnTolerance = 0.4;
-        encodersMoveValue = 130;
+        turnTolerance = 0.25;
+        encodersMoveValue = 120;
     }
 
     #region Events
@@ -186,16 +187,33 @@ public partial class Robocross : Form
         re = Convert.ToInt32(rData.re);
 
         switch (mode){
+            // Debug case
+            case -1:
+                if (Math.Abs(t - 180.0 - 180.0) > turnTolerance){
+                    error = t - 180.0 - 180.0;
+
+                    double initOverturn = 180.0 == 0.0 ? 360.0 : 180.0;
+
+                    if (error > 200.0 + 180.0*1*-1)
+                        error -= initOverturn + 180.0*1*-1;
+
+                    int b = Convert.ToInt16(((error)));
+                    
+                    if (b == 0)
+                        rMsg.B = -1;
+                    else
+                        rMsg.B = b;
+                }
+            break;
+            
             // Move forward till the line
             case 0:
                 rMsg.F = 100;
                 
-                if (rData.l0 == "0" && rData.l1 == "0" && rData.l2 == "0" && rData.l3 == "0" && rData.l4 == "0"){
-                    re_to = Convert.ToInt32(rData.re);
-                    lineMult = 2;
-                    mode = 5;
-                }
-                break;
+                encMult = 2;
+                CheckLine();
+            break;
+            
             // Move forward till the wall
             case 1:
                 if (d0 > 30){
@@ -203,26 +221,16 @@ public partial class Robocross : Form
                     rMsg.F = 100;
 
                     // If the line is seen again - turn around
-                    if (rData.l0 == "0" && rData.l1 == "0" && rData.l2 == "0" && rData.l3 == "0" && rData.l4 == "0"){
-                        re_to = Convert.ToInt32(rData.re);
-                        mode = 8;
-                    }
+                    CheckLine();
+                    
+                    // Correct the direction
+                    CorrectDir(90.0, 110.0);
 
                     // Move robot off the wall if one's detected
                     if (d1 < 40 || d2 < 15){
-                        rMsg.B = 20;
+                        rMsg.B += 5;
                     } else if (d7 < 40 || d6 < 15){
-                        rMsg.B = -20;
-                    }
-                    
-                    // Correct the direction
-                    if (Math.Abs(t - 90.0 - 180.0*backwards) > turnTolerance){
-                        error = t - 90.0 - 180.0*backwards;
-
-                        if (error > 110.0 + 180.0*backwards)
-                            error -= 90.0 + 180.0*backwards;
-
-                        rMsg.B = Convert.ToInt16(((error)));
+                        rMsg.B += -5;
                     }
 
                 // Once the wall has been spotted
@@ -235,136 +243,57 @@ public partial class Robocross : Form
                     else
                         mode = 3;
                 }
-                break;
+            break;
+            
             // If d6 > d2 - turn left
             case 2:
-                if (Math.Abs(t - 0.0 - 180.0*backwards) > turnTolerance){
-                    error = t - 0.0 - 180.0*backwards;
-
-                    if (error > 340.0 - 180*backwards)
-                        error -= 360 - 180*backwards;
-
-                    rMsg.B = Convert.ToInt16(((error)));
-                }
-                // Once the desired direction is set - move forward
-                // Until d2 has sufficiant distance
-                else{
-                    rMsg.B = 0;
-                    mode = 4;
-                }
-                break;
+                CorrectDir(0.0, 340.0, -1);
+            break;
+            
             // if d6 < d2 - turn right
             case 3:
-                if (Math.Abs(t - 180.0 - 180.0*backwards) > turnTolerance){
-                    error = t - 180.0 - 180.0*backwards;
-
-                    if (error > 200.0 - 180*backwards)
-                        error -= 180 - 180*backwards;
-
-                    rMsg.B = Convert.ToInt16(((error)));
-                }
-                // Once the desired direction is set - move forward
-                // Until d6 has sufficiant distance
-                else{
-                    rMsg.B = 0;
-                    mode = 7;
-                }
-                break;
+                CorrectDir(180.0, 200.0, -1);
+            break;
+            
             // Move forward till d2 has distance
             case 4:
-                if (d0 > 30){
-                    rMsg.B = 0;
-                    rMsg.F = 100;
-                    
-                    if (d2 > 30){
-                        re_to = Convert.ToInt32(rData.re);
-                        mode = 5;
-                    }
-                }
-                break;
+                MoveForwardTillDistance(d2);
+                CorrectDir(0.0, 340.0, -1);
+            break;
+            
             // Move more forward using encoders values
             // To prevent collision
             case 5:
-                if (re < re_to + encodersMoveValue*lineMult){
-                    rMsg.B = 0;
-                    rMsg.F = 100;
-                }
-                // Once that's done - 
-                // Turn to the desired direction
-                // Moving forward (90.0) and moving backwards (270.0)
-                else{
-                    lineMult = 1;
-                    rMsg.F = 0;
-                    mode = 6;
-                }
-                break;
+                MoveEnc();
+            break;
+            
             // Turn to move forward
             case 6:
-                if (Math.Abs(t - 90.0 - 180.0*backwards) > turnTolerance){
-                    error = t - 90.0 - 180.0*backwards;
-
-                    if (error > 110.0 + 180.0*backwards)
-                        error -= 90.0 + 180.0*backwards;
-
-                    rMsg.B = Convert.ToInt16(((error)));
-                } 
-                // Once the turning is done - 
-                // Move forward till the wall again
-                else {
-                    rMsg.F = 0;
-                    mode = 1;
-                }
-                break;
+                CorrectDir(90.0, 110.0);
+            break;
+            
             // Move forward till d6 has distance
             case 7:
-                if (d0 > 30){
-                    rMsg.B = 0;
-                    rMsg.F = 100;
-                    
-                    if (d6 > 30){
-                        re_to = Convert.ToInt32(rData.re);
-                        mode = 5;
-                    }
-                }
-                break;
+                CorrectDir(180.0, 200.0, -1);
+                MoveForwardTillDistance(d6);
+            break;
+            
             // After the line's been detected - 
             // Move a little forward beyond it
             case 8:
-                if (re < re_to + encodersMoveValue){
-                    rMsg.B = 0;
-                    rMsg.F = 100;
-                }
-                else{
-                    rMsg.F = 0;
-                    
-                    // If the robot was moving backwards - 
-                    // Stop it
-                    if (backwards == 0)
-                        mode = 9;
-                    else
-                        mode = 10;
-                }
-                break;
+                MoveEnc();
+            break;
+            
             // Turn around
             case 9:
-                if (Math.Abs(t - 270.0) > turnTolerance){
-                    error = t - 270.0;
-
-                    if (error > 290.0)
-                        error -= 270.0;
-
-                    rMsg.B = Convert.ToInt16(((error)));
-                } else {
-                    backwards = 1;
-                    rMsg.F = 0;
-                    mode = 1;
-                }
-                break;
+                CorrectDir(270.0, 290.0);
+            break;
+            
             // Stop after complition
             case 10:
                 rMsg.F = 0;
                 rMsg.B = 0;
-                break;
+            break;
         }
         
         SendData();
@@ -461,6 +390,99 @@ public partial class Robocross : Form
         this.numF.Value = rMsg.F;
         this.numB.Value = rMsg.B;
         this.numT.Value = rMsg.T;
+    }
+    
+    // Checks if the line is detected
+    private void CheckLine(){
+        if (rData.l0 == "0" && rData.l1 == "0" && rData.l2 == "0" && rData.l3 == "0" && rData.l4 == "0"){   
+            re_to = Convert.ToInt32(rData.re);
+            
+            if (mode == 0)
+                mode = 5;
+            else
+                mode = 8;
+        }
+    }
+
+    // Corrects the desired direction
+    private void CorrectDir(double course, double overTurn, int caseMult = 1){
+        if (Math.Abs(t - course - 180.0*backwards) > turnTolerance){
+            error = t - course - 180.0*backwards;
+
+            double initOverturn = course == 0.0 ? 360.0 : course;
+
+            if (error > overTurn + 180.0*backwards*caseMult)
+                error -= initOverturn + 180.0*backwards*caseMult;
+
+            int b = Convert.ToInt16(((error)));
+            
+            if (b == 0)
+                rMsg.B = caseMult;
+            else
+                rMsg.B = b;
+        }
+        else{
+            rMsg.B = 0;
+
+            switch (mode){
+                case 2:
+                    mode = 4;
+                break;
+
+                case 3:
+                    mode = 7;
+                break;
+
+                case 6:
+                    mode = 1;
+                break;
+
+                case 9:
+                    mode = 1;
+                    backwards = 1;
+                break;
+            }
+        }
+    }
+
+    // Moves forward until distance to the left or right
+    // Is sufficient
+    private void MoveForwardTillDistance(int d){        
+        if (d0 > 30){
+            rMsg.B = 0;
+            rMsg.F = 100;
+            
+            if (d > 30){
+                re_to = Convert.ToInt32(rData.re);
+                mode = 5;
+            }
+        }
+    }
+
+    // Move forward with encoders
+    private void MoveEnc(){
+        if (re < re_to + encodersMoveValue*encMult){
+            rMsg.B = 0;
+            rMsg.F = 100;
+        }
+        else{
+            rMsg.F = 0;
+            encMult = 1;
+            
+            // Once that's done - 
+            // Turn to the desired direction
+            // Moving forward (90.0) or backwards (270.0)
+            if (mode == 5)
+                mode = 6;
+            else {
+                // If the robot was moving backwards - 
+                // Stop it
+                if (backwards == 0)
+                    mode = 9;
+                else
+                    mode = 10;
+            }
+        }
     }
     #endregion
 }
