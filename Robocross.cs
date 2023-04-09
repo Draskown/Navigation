@@ -93,8 +93,8 @@ public partial class Robocross : Form
         t = error = 0.0;
         encMult = 1;
 
-        turnTolerance = 0.25;
-        encodersMoveValue = 120;
+        turnTolerance = 0.3;
+        encodersMoveValue = 130;
     }
 
     #region Events
@@ -229,7 +229,7 @@ public partial class Robocross : Form
                     // Move robot off the wall if one's detected
                     if (d1 < 40 || d2 < 15){
                         rMsg.B += 5;
-                    } else if (d7 < 40 || d6 < 15){
+                    } else if (d7 < 60 || d6 < 15){
                         rMsg.B += -5;
                     }
 
@@ -421,6 +421,7 @@ public partial class Robocross : Form
             else
                 rMsg.B = b;
         }
+
         else{
             rMsg.B = 0;
 
