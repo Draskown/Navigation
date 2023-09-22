@@ -697,7 +697,7 @@ namespace Navigation
             this.moveBtn.Name = "moveBtn";
             this.moveBtn.Size = new System.Drawing.Size(89, 33);
             this.moveBtn.TabIndex = 0;
-            this.moveBtn.Text = "Move";
+            this.moveBtn.Text = "Cross";
             this.moveBtn.UseVisualStyleBackColor = true;
             this.moveBtn.Click += new System.EventHandler(this.MoveRobot);
             // 
@@ -727,7 +727,7 @@ namespace Navigation
             //
             // timer
             //
-            this.timer.Interval = 500;
+            this.timer.Interval = 250;
             this.timer.Tick += new System.EventHandler(this.timer_Tick);
             // 
             // Robocross

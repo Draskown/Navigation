@@ -745,7 +745,7 @@ namespace Navigation
             this.Icon = new Icon("D:/Other/Desktop/Ucheba/Happrinn.ico");
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.Name = "Form2";
-            this.Text = "IoT_LR1";
+            this.Text = "IoT_LR2";
             ((System.ComponentModel.ISupportInitialize)(this.numN)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numM)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numF)).EndInit();

@@ -173,11 +173,6 @@ public partial class Robocross : Form
 
     // Handle timer ticking
     private void timer_Tick(object sender, EventArgs e){
-        // t forward = 0.0
-        // t to right = 90.0
-        // t to bacwards = 180.0
-        // t to left = 270
-
         d0 = Convert.ToInt16(rData.d0);
         d1 = Convert.ToInt16(rData.d1);
         d2 = Convert.ToInt16(rData.d2);
